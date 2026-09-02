@@ -77,7 +77,7 @@ work without a code change.
 # Terminal 1 — the API, running the real handler
 cd serve/api
 npm install
-GCP_PROJECT_ID = bank-regulatory-platform \
+GCP_PROJECT_ID=bank-regulatory-platform \
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json \
   npm run dev            # http://localhost:8787
 

@@ -1,7 +1,7 @@
 import { ExternalAccountClient } from "google-auth-library";
 import { config } from "./config.mjs";
 
-// Three credential paths, in order of preference:
+// Credential paths, in order of preference:
 //
 //   1. Workload Identity Federation. The Lambda execution role is exchanged for
 //      a short-lived Google access token. Nothing secret is ever stored. In
@@ -10,12 +10,22 @@ import { config } from "./config.mjs";
 //      AWS_REGION variables the runtime injects, so the URLs below are only
 //      ever a fallback for EC2.
 //
-//   2. A service account JSON key pulled from Secrets Manager. Simpler to set
+//   2. A local service-account keyfile via GOOGLE_APPLICATION_CREDENTIALS.
+//      Lambda has no filesystem keyfile, so this only ever fires during
+//      `npm run dev`.
+//
+//   3. A service account JSON key pulled from Secrets Manager. Simpler to set
 //      up, but it is long-lived key material sitting in another cloud.
 //
-//   3. Application Default Credentials — a GOOGLE_APPLICATION_CREDENTIALS
-//      keyfile or `gcloud auth application-default login`. Never available in
-//      Lambda; this is the local-dev path.
+//   4. Plain Application Default Credentials, e.g. the cache left by
+//      `gcloud auth application-default login`. Also local-dev only, and only
+//      reached when GOOGLE_APPLICATION_CREDENTIALS isn't set either.
+
+function localKeyfileClient() {
+  const keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (!keyFilename) return null;
+  return { keyFilename };
+}
 
 function federatedClient() {
   const { projectNumber, poolId, providerId, serviceAccountEmail } = config.auth;
@@ -65,16 +75,22 @@ export async function getBigQueryAuthOptions() {
     return cached;
   }
 
+  const keyfileOptions = localKeyfileClient();
+  if (keyfileOptions) {
+    cached = keyfileOptions;
+    return cached;
+  }
+
   const credentials = await secretCredentials();
   if (credentials) {
     cached = { credentials };
     return cached;
   }
 
-  // Neither is configured — let the BigQuery client fall back to Application
-  // Default Credentials (a GOOGLE_APPLICATION_CREDENTIALS keyfile, or the
-  // `gcloud auth application-default login` cache). Never reached in Lambda,
-  // since Terraform always sets the WIF variables there.
+  // Nothing above is configured — let the BigQuery client fall back to
+  // whatever Application Default Credentials it can find on its own, such as
+  // the `gcloud auth application-default login` cache. Never reached in
+  // Lambda, since Terraform always sets the WIF variables there.
   cached = {};
   return cached;
 }
