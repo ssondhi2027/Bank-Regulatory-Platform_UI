@@ -1,7 +1,7 @@
 import { ExternalAccountClient } from "google-auth-library";
 import { config } from "./config.mjs";
 
-// Two credential paths, in order of preference:
+// Credential paths, in order of preference:
 //
 //   1. Workload Identity Federation. The Lambda execution role is exchanged for
 //      a short-lived Google access token. Nothing secret is ever stored. In
@@ -10,8 +10,18 @@ import { config } from "./config.mjs";
 //      AWS_REGION variables the runtime injects, so the URLs below are only
 //      ever a fallback for EC2.
 //
-//   2. A service account JSON key pulled from Secrets Manager. Simpler to set
+//   2. A local service-account keyfile via GOOGLE_APPLICATION_CREDENTIALS.
+//      Lambda has no filesystem keyfile, so this only ever fires during
+//      `npm run dev`.
+//
+//   3. A service account JSON key pulled from Secrets Manager. Simpler to set
 //      up, but it is long-lived key material sitting in another cloud.
+
+function localKeyfileClient() {
+  const keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (!keyFilename) return null;
+  return { keyFilename };
+}
 
 function federatedClient() {
   const { projectNumber, poolId, providerId, serviceAccountEmail } = config.auth;
@@ -61,6 +71,12 @@ export async function getBigQueryAuthOptions() {
     return cached;
   }
 
+  const keyfileOptions = localKeyfileClient();
+  if (keyfileOptions) {
+    cached = keyfileOptions;
+    return cached;
+  }
+
   const credentials = await secretCredentials();
   if (credentials) {
     cached = { credentials };
@@ -68,6 +84,7 @@ export async function getBigQueryAuthOptions() {
   }
 
   throw new Error(
-    "No GCP credentials configured. Set the GCP_WIF_* variables, or GCP_SA_KEY_SECRET_ARN."
+    "No GCP credentials configured. Set the GCP_WIF_* variables, " +
+      "GOOGLE_APPLICATION_CREDENTIALS, or GCP_SA_KEY_SECRET_ARN."
   );
 }
