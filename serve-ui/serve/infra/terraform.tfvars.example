@@ -1,0 +1,4 @@
+gcp_project_id     = "your-gcp-project"
+gcp_project_number = "123456789012"
+bq_location        = "northamerica-northeast2"
+cors_allow_origin  = "https://your-site.netlify.app"

@@ -1,0 +1,44 @@
+# Bundles the Lambda and updates the function in place. Terraform still owns
+# every resource; this only ships new code, which keeps deploys fast and means
+# a code change never needs plan/apply review.
+name: deploy-api
+
+on:
+  push:
+    branches: [main]
+    paths: ["serve/api/**", ".github/workflows/deploy-api.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: serve/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: serve/api/package-lock.json
+
+      - run: npm ci
+      - run: npm run package
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ca-central-1
+
+      - name: Update function code
+        run: |
+          aws lambda update-function-code \
+            --function-name brp-api \
+            --zip-file fileb://lambda.zip \
+            --publish
