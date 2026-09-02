@@ -19,7 +19,7 @@ function dataset(name, fallback) {
 
 export const config = {
   projectId: required("GCP_PROJECT_ID"),
-  location: process.env.BQ_LOCATION || "northamerica-northeast2",
+  location: process.env.BQ_LOCATION || "northamerica-northeast1",
 
   datasets: {
     core: dataset("BQ_DATASET_CORE", "core"),
@@ -50,7 +50,7 @@ export const config = {
   // on-run-end hook usually stamps a run timestamp; set this to whatever
   // fct_control_results actually calls it. See serve/README.md.
   controlRunTsColumn: (() => {
-    const v = process.env.CONTROL_RUN_TS_COLUMN || "run_started_at";
+    const v = process.env.CONTROL_RUN_TS_COLUMN || "logged_at";
     if (!IDENT.test(v)) throw new Error(`Invalid CONTROL_RUN_TS_COLUMN: ${v}`);
     return v;
   })(),

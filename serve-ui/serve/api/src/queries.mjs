@@ -14,9 +14,12 @@ const T = {
 
 // Every filter below is optional. An empty array means "no filter" rather than
 // "match nothing", which is why the predicate tests array_length instead of
-// comparing to null — BigQuery has no null array parameter.
+// comparing to null — BigQuery has no null array parameter. The coalesce
+// matters: the Node client sends an empty ARRAY<STRING> param in a form where
+// ARRAY_LENGTH() evaluates to NULL rather than 0, which without it silently
+// matched zero rows whenever no institution filter was given.
 const scopeFilter = `
-    and (array_length(@institution_ids) = 0 or institution_id in unnest(@institution_ids))
+    and (coalesce(array_length(@institution_ids), 0) = 0 or institution_id in unnest(@institution_ids))
     and (@from_date is null or reporting_period_end >= @from_date)
     and (@to_date is null or reporting_period_end <= @to_date)`;
 

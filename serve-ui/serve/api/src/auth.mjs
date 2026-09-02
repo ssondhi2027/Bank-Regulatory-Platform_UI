@@ -1,7 +1,7 @@
 import { ExternalAccountClient } from "google-auth-library";
 import { config } from "./config.mjs";
 
-// Two credential paths, in order of preference:
+// Three credential paths, in order of preference:
 //
 //   1. Workload Identity Federation. The Lambda execution role is exchanged for
 //      a short-lived Google access token. Nothing secret is ever stored. In
@@ -12,6 +12,10 @@ import { config } from "./config.mjs";
 //
 //   2. A service account JSON key pulled from Secrets Manager. Simpler to set
 //      up, but it is long-lived key material sitting in another cloud.
+//
+//   3. Application Default Credentials — a GOOGLE_APPLICATION_CREDENTIALS
+//      keyfile or `gcloud auth application-default login`. Never available in
+//      Lambda; this is the local-dev path.
 
 function federatedClient() {
   const { projectNumber, poolId, providerId, serviceAccountEmail } = config.auth;
@@ -67,7 +71,10 @@ export async function getBigQueryAuthOptions() {
     return cached;
   }
 
-  throw new Error(
-    "No GCP credentials configured. Set the GCP_WIF_* variables, or GCP_SA_KEY_SECRET_ARN."
-  );
+  // Neither is configured — let the BigQuery client fall back to Application
+  // Default Credentials (a GOOGLE_APPLICATION_CREDENTIALS keyfile, or the
+  // `gcloud auth application-default login` cache). Never reached in Lambda,
+  // since Terraform always sets the WIF variables there.
+  cached = {};
+  return cached;
 }

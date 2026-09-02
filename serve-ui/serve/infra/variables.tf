@@ -17,7 +17,7 @@ variable "gcp_project_number" {
 variable "bq_location" {
   description = "BigQuery dataset location."
   type        = string
-  default     = "northamerica-northeast2"
+  default     = "northamerica-northeast1"
 }
 
 variable "bq_datasets" {
@@ -33,7 +33,7 @@ variable "bq_datasets" {
 variable "control_run_ts_column" {
   description = "Timestamp column on fct_control_results used to pick the latest run."
   type        = string
-  default     = "run_started_at"
+  default     = "logged_at"
 }
 
 variable "cors_allow_origin" {
