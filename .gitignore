@@ -12,3 +12,6 @@ node_modules/
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
+# Local Netlify folder
+.netlify
+dist/
