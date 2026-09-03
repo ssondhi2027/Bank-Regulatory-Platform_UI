@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useResource } from "../api.js";
-import { billions, quarter, ratio } from "../format.js";
+import { billions, quarter, ratio, shortDate } from "../format.js";
 import DataTable from "../components/DataTable.jsx";
 import MetricChart from "../components/MetricChart.jsx";
 import { Empty, Failed, Loading } from "../components/States.jsx";
@@ -26,6 +26,7 @@ export default function Business() {
   const params = useMemo(() => ({ institution_id: active }), [active.join(",")]);
   const metrics = useResource("/metrics", params);
   const balances = useResource("/balance-sheet", params);
+  const income = useResource("/income-statement", params);
 
   if (institutions.status === "loading") return <Loading label="the institution registry" />;
   if (institutions.status === "error")
@@ -113,6 +114,17 @@ export default function Business() {
           <LatestBalances rows={balances.data.rows} names={names} />
         )}
       </section>
+
+      <section className="section">
+        <h2 className="h2">Latest income statement</h2>
+        {income.status === "loading" ? (
+          <Loading label="income statement results" />
+        ) : income.status === "error" ? (
+          <Failed error={income.error} onRetry={income.retry} />
+        ) : (
+          <LatestIncome rows={income.data.rows} names={names} />
+        )}
+      </section>
     </>
   );
 }
@@ -133,18 +145,61 @@ function pivot(rows, metric) {
   );
 }
 
+/** The row with the highest reporting_period_end, ignoring rows where `field`
+ *  itself is null — so a column that's only filed quarterly doesn't get
+ *  blanked out by a more recent monthly row that simply doesn't carry it. */
+function latestWithField(rows, field) {
+  let best = null;
+  for (const r of rows) {
+    if (r[field] === null || r[field] === undefined) continue;
+    if (!best || r.reporting_period_end > best.reporting_period_end) best = r;
+  }
+  return best;
+}
+
+/** Renders a value plus a muted "(as of ...)" note when it was carried
+ *  forward from an older period than the row's own. Uses the full date, not
+ *  the quarter label — a value from three months back can round-trip to the
+ *  same calendar quarter as the row itself, which would make the note look
+ *  like a no-op instead of the caveat it's meant to be. */
+function agedCell(value, valuePeriod, rowPeriod) {
+  const aged = valuePeriod && valuePeriod !== rowPeriod;
+  return (
+    <>
+      {billions(value)}
+      {aged ? <span className="cell-note"> (as of {shortDate(valuePeriod)})</span> : null}
+    </>
+  );
+}
+
 function LatestBalances({ rows, names }) {
   const latest = useMemo(() => {
     const byInstitution = new Map();
     for (const r of rows) {
-      const held = byInstitution.get(r.institution_id);
-      if (!held || r.reporting_period_end > held.reporting_period_end) {
-        byInstitution.set(r.institution_id, r);
-      }
+      if (!byInstitution.has(r.institution_id)) byInstitution.set(r.institution_id, []);
+      byInstitution.get(r.institution_id).push(r);
     }
-    return [...byInstitution.values()].sort(
-      (a, b) => Number(b.total_assets_cad_000) - Number(a.total_assets_cad_000)
-    );
+
+    const merged = [...byInstitution.entries()].map(([institutionId, institutionRows]) => {
+      const mostRecent = institutionRows.reduce((a, b) =>
+        b.reporting_period_end > a.reporting_period_end ? b : a
+      );
+      const loansRow = latestWithField(institutionRows, "gross_loans_cad_000");
+      const allowanceRow = latestWithField(institutionRows, "allowance_for_credit_losses_cad_000");
+
+      return {
+        institution_id: institutionId,
+        reporting_period_end: mostRecent.reporting_period_end,
+        total_assets_cad_000: mostRecent.total_assets_cad_000,
+        total_equity_cad_000: mostRecent.total_equity_cad_000,
+        gross_loans_cad_000: loansRow?.gross_loans_cad_000 ?? null,
+        gross_loans_period: loansRow?.reporting_period_end ?? null,
+        allowance_for_credit_losses_cad_000: allowanceRow?.allowance_for_credit_losses_cad_000 ?? null,
+        allowance_period: allowanceRow?.reporting_period_end ?? null,
+      };
+    });
+
+    return merged.sort((a, b) => Number(b.total_assets_cad_000) - Number(a.total_assets_cad_000));
   }, [rows]);
 
   if (latest.length === 0) return <Empty>No balance sheet rows in scope for this selection.</Empty>;
@@ -175,7 +230,7 @@ function LatestBalances({ rows, names }) {
           key: "gross_loans_cad_000",
           label: "Gross loans",
           align: "num",
-          render: (r) => billions(r.gross_loans_cad_000),
+          render: (r) => agedCell(r.gross_loans_cad_000, r.gross_loans_period, r.reporting_period_end),
         },
         {
           key: "total_equity_cad_000",
@@ -187,7 +242,57 @@ function LatestBalances({ rows, names }) {
           key: "allowance_for_credit_losses_cad_000",
           label: "Credit loss allowance",
           align: "num",
-          render: (r) => billions(r.allowance_for_credit_losses_cad_000),
+          render: (r) =>
+            agedCell(r.allowance_for_credit_losses_cad_000, r.allowance_period, r.reporting_period_end),
+        },
+      ]}
+    />
+  );
+}
+
+function LatestIncome({ rows, names }) {
+  const latest = useMemo(() => {
+    const byInstitution = new Map();
+    for (const r of rows) {
+      const held = byInstitution.get(r.institution_id);
+      if (!held || r.reporting_period_end > held.reporting_period_end) {
+        byInstitution.set(r.institution_id, r);
+      }
+    }
+    return [...byInstitution.values()].sort(
+      (a, b) => Number(b.net_income_cad_000) - Number(a.net_income_cad_000)
+    );
+  }, [rows]);
+
+  if (latest.length === 0) return <Empty>No income statement rows in scope for this selection.</Empty>;
+
+  return (
+    <DataTable
+      caption="Most recent reported income statement per institution"
+      rowKey={(r) => r.institution_id}
+      rows={latest}
+      columns={[
+        {
+          key: "institution_id",
+          label: "Institution",
+          render: (r) => names[r.institution_id] ?? r.institution_id,
+        },
+        {
+          key: "reporting_period_end",
+          label: "Period",
+          render: (r) => quarter(r.reporting_period_end),
+        },
+        {
+          key: "net_interest_income_cad_000",
+          label: "Net interest income",
+          align: "num",
+          render: (r) => billions(r.net_interest_income_cad_000),
+        },
+        {
+          key: "net_income_cad_000",
+          label: "Net income",
+          align: "num",
+          render: (r) => billions(r.net_income_cad_000),
         },
       ]}
     />
