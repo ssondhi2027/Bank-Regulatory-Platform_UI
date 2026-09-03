@@ -137,8 +137,9 @@ any site can drive queries against your BigQuery billing account.
 
 ### Continuous deployment
 
-`.github/workflows/deploy-api.yml` ships `serve/api/**` changes on push to
-`main`. It's opt-in: set `github_repo = "owner/repo"` in `terraform.tfvars` and
+`.github/workflows/deploy-api.yml` (at the repo root — GitHub Actions doesn't
+recognize workflow files anywhere else) ships API changes on push to `main`.
+It's opt-in: set `github_repo = "owner/repo"` in `terraform.tfvars` and
 apply, then copy the printed `github_wif_provider` and
 `github_ci_service_account` outputs into this repo's Actions secrets as
 `GCP_WIF_PROVIDER` and `GCP_CI_SERVICE_ACCOUNT`. No key material is stored —

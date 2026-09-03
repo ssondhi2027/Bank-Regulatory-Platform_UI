@@ -10,7 +10,7 @@ name: deploy-api
 on:
   push:
     branches: [main]
-    paths: ["serve/api/**", ".github/workflows/deploy-api.yml"]
+    paths: ["serve-ui/serve/api/**", ".github/workflows/deploy-api.yml"]
   workflow_dispatch:
 
 permissions:
@@ -33,4 +33,4 @@ jobs:
         with:
           service: brp-api
           region: northamerica-northeast1
-          source: serve/api
+          source: serve-ui/serve/api
