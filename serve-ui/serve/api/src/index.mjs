@@ -47,9 +47,8 @@ export const handler = async (event) => {
   }
 };
 
-// Function URLs and API Gateway stages both prefix differently; strip a
-// trailing slash and an optional /api mount point so the same bundle works
-// behind either.
+// Strip a trailing slash and an optional /api mount point, in case this ever
+// sits behind a path-based proxy instead of being called directly.
 function normalisePath(raw) {
   let p = raw.replace(/\/+$/, "") || "/";
   if (p.startsWith("/api/")) p = p.slice(4);

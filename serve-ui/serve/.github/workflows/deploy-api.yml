@@ -1,6 +1,10 @@
-# Bundles the Lambda and updates the function in place. Terraform still owns
-# every resource; this only ships new code, which keeps deploys fast and means
-# a code change never needs plan/apply review.
+# Deploys API source changes straight to Cloud Run via Cloud Build. Terraform
+# still owns the service, its service account, and BigQuery IAM (see infra/)
+# — this only ships new code.
+#
+# One-time setup: set github_repo in terraform.tfvars and apply, then add the
+# printed github_wif_provider and github_ci_service_account outputs as the
+# GCP_WIF_PROVIDER and GCP_CI_SERVICE_ACCOUNT secrets on this repo.
 name: deploy-api
 
 on:
@@ -16,29 +20,17 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: serve/api
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - id: auth
+        uses: google-github-actions/auth@v2
         with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: serve/api/package-lock.json
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_CI_SERVICE_ACCOUNT }}
 
-      - run: npm ci
-      - run: npm run package
-
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: google-github-actions/deploy-cloudrun@v2
         with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ca-central-1
-
-      - name: Update function code
-        run: |
-          aws lambda update-function-code \
-            --function-name brp-api \
-            --zip-file fileb://lambda.zip \
-            --publish
+          service: brp-api
+          region: northamerica-northeast1
+          source: serve/api

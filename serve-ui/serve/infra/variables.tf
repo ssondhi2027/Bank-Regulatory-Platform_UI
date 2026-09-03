@@ -1,17 +1,12 @@
-variable "aws_region" {
-  description = "AWS region for the Lambda. ca-central-1 keeps Canadian filing data in Canada."
-  type        = string
-  default     = "ca-central-1"
-}
-
 variable "gcp_project_id" {
-  description = "GCP project holding the BigQuery marts."
+  description = "GCP project holding the BigQuery marts and running the API."
   type        = string
 }
 
-variable "gcp_project_number" {
-  description = "Numeric GCP project number. Needed to build the workload identity audience."
+variable "gcp_region" {
+  description = "Cloud Run region. Defaults to where the BigQuery marts live, keeping data in Canada and minimizing latency."
   type        = string
+  default     = "northamerica-northeast1"
 }
 
 variable "bq_location" {
@@ -37,7 +32,7 @@ variable "control_run_ts_column" {
 }
 
 variable "cors_allow_origin" {
-  description = "Origin allowed to call the Function URL. Set this to the deployed site, not '*'."
+  description = "Origin allowed to call the API. Set this to the deployed site, not '*'."
   type        = string
   default     = "*"
 }
@@ -46,8 +41,8 @@ variable "api_key" {
   description = <<-EOT
     Shared secret required in the x-api-key header. It ships inside the public
     Netlify build (as VITE_API_KEY), so it is not real access control — it only
-    filters out bots and scrapers that hit the Function URL directly without
-    loading the site. Leave blank to disable the check entirely.
+    filters out bots and scrapers that hit the API directly without loading
+    the site. Leave blank to disable the check entirely.
   EOT
   type        = string
   default     = ""
@@ -57,4 +52,10 @@ variable "api_key" {
 variable "name_prefix" {
   type    = string
   default = "brp"
+}
+
+variable "github_repo" {
+  description = "GitHub \"owner/name\" allowed to deploy via Workload Identity Federation. Leave blank to skip creating the CI identity entirely."
+  type        = string
+  default     = ""
 }

@@ -1,7 +1,7 @@
-gcp_project_id     = "your-gcp-project"
-gcp_project_number = "123456789012"
-bq_location        = "northamerica-northeast1"
-cors_allow_origin  = "https://your-site.netlify.app"
+gcp_project_id    = "your-gcp-project"
+gcp_region        = "northamerica-northeast1"
+bq_location       = "northamerica-northeast1"
+cors_allow_origin = "https://your-site.netlify.app"
 
 # Generate with: openssl rand -hex 24
 # Set the same value as VITE_API_KEY in Netlify. Leave blank to disable.

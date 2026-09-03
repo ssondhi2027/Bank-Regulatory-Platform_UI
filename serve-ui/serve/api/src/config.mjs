@@ -1,5 +1,5 @@
-// Central config. Everything comes from the Lambda environment so the same
-// bundle runs against dev and prod BigQuery without a rebuild.
+// Central config. Everything comes from the Cloud Run environment so the same
+// source runs against dev and prod BigQuery without a rebuild.
 
 const IDENT = /^[A-Za-z0-9_-]+$/;
 
@@ -35,16 +35,6 @@ export const config = {
   // in the warm container for a few seconds if you later want to trade
   // freshness for cost.
   cacheTtlSeconds: Number(process.env.CACHE_TTL_SECONDS || 0),
-
-  auth: {
-    // Preferred: Workload Identity Federation, no stored key material.
-    projectNumber: process.env.GCP_PROJECT_NUMBER,
-    poolId: process.env.GCP_WIF_POOL_ID,
-    providerId: process.env.GCP_WIF_PROVIDER_ID,
-    serviceAccountEmail: process.env.GCP_SERVICE_ACCOUNT_EMAIL,
-    // Fallback: a service account JSON key held in Secrets Manager.
-    secretArn: process.env.GCP_SA_KEY_SECRET_ARN,
-  },
 
   // The one column this scaffold could not verify from the repo README. dbt's
   // on-run-end hook usually stamps a run timestamp; set this to whatever

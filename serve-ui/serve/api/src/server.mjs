@@ -1,6 +1,6 @@
-// Run the exact Lambda handler on localhost so the React dev server has
-// something to talk to. `npm run dev` in serve/api, then point
-// VITE_API_BASE at http://localhost:8787.
+// The same plain HTTP server for both local dev and Cloud Run: Cloud Run just
+// needs a container listening on $PORT, and `handler` doesn't know or care
+// which platform is calling it.
 import { createServer } from "node:http";
 import { handler } from "./index.mjs";
 
@@ -18,4 +18,4 @@ createServer(async (req, res) => {
 
   res.writeHead(result.statusCode, result.headers);
   res.end(result.body);
-}).listen(port, () => console.log(`API listening on http://localhost:${port}`));
+}).listen(port, () => console.log(`API listening on port ${port}`));
