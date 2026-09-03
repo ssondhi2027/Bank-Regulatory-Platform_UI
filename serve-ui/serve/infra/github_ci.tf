@@ -64,6 +64,17 @@ resource "google_service_account_iam_member" "ci_act_as_runtime" {
   member              = "serviceAccount:${google_service_account.ci_deployer[0].email}"
 }
 
+# ...and built via Cloud Build, which runs as the default compute service
+# account — a newer GCP requirement is that whoever triggers the build must
+# also be allowed to act as *that* service account, not just the runtime one.
+resource "google_service_account_iam_member" "ci_act_as_cloudbuild" {
+  count = var.github_repo == "" ? 0 : 1
+
+  service_account_id = "projects/${var.gcp_project_id}/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+  role                = "roles/iam.serviceAccountUser"
+  member              = "serviceAccount:${google_service_account.ci_deployer[0].email}"
+}
+
 # ...built and pushed via Cloud Build.
 resource "google_project_iam_member" "ci_cloudbuild_editor" {
   count = var.github_repo == "" ? 0 : 1
