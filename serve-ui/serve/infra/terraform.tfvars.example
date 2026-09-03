@@ -6,3 +6,8 @@ cors_allow_origin = "https://your-site.netlify.app"
 # Generate with: openssl rand -hex 24
 # Set the same value as VITE_API_KEY in Netlify. Leave blank to disable.
 api_key = ""
+
+# Gates the Control scorecard page. Real access control -- never set this as
+# a VITE_ variable, it must never end up in the public build. Leave blank to
+# leave the page open to anyone.
+scorecard_password = ""

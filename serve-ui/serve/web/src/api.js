@@ -6,7 +6,7 @@ const BASE = (import.meta.env.VITE_API_BASE || "http://localhost:8787").replace(
 // site can read it from the network tab.
 const API_KEY = import.meta.env.VITE_API_KEY;
 
-export async function get(path, params = {}) {
+export async function get(path, params = {}, extraHeaders) {
   const url = new URL(BASE + path);
   for (const [k, v] of Object.entries(params)) {
     if (v === null || v === undefined || v === "") continue;
@@ -17,16 +17,21 @@ export async function get(path, params = {}) {
     headers: {
       accept: "application/json",
       ...(API_KEY ? { "x-api-key": API_KEY } : {}),
+      ...extraHeaders,
     },
   });
   const body = await res.json().catch(() => ({}));
 
-  if (!res.ok) throw new Error(body.error || `Request failed (${res.status}).`);
+  if (!res.ok) {
+    const err = new Error(body.error || `Request failed (${res.status}).`);
+    err.status = res.status;
+    throw err;
+  }
   return body;
 }
 
 /** Fetch on mount and whenever `deps` change, with a manual retry. */
-export function useResource(path, params, deps) {
+export function useResource(path, params, deps, extraHeaders) {
   const [state, setState] = useState({ status: "loading", data: null, error: null });
   const [attempt, setAttempt] = useState(0);
 
@@ -36,7 +41,7 @@ export function useResource(path, params, deps) {
     let live = true;
     setState((s) => ({ ...s, status: "loading" }));
 
-    get(path, params)
+    get(path, params, extraHeaders)
       .then((data) => live && setState({ status: "ready", data, error: null }))
       .catch((error) => live && setState({ status: "error", data: null, error }));
 

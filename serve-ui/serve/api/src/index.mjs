@@ -31,6 +31,14 @@ export const handler = async (event) => {
       throw new HttpError(401, "Missing or invalid API key.");
     }
 
+    if (
+      path === "/controls/scorecard" &&
+      config.scorecardPassword &&
+      readHeader(event.headers, "x-scorecard-password") !== config.scorecardPassword
+    ) {
+      throw new HttpError(401, "Missing or invalid scorecard password.");
+    }
+
     const route = routes[`${method} ${path}`];
     if (!route) throw new HttpError(404, `No route for ${method} ${path}`);
 

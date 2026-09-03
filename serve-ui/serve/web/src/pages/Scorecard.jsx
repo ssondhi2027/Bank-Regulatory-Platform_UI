@@ -1,14 +1,69 @@
+import { useState } from "react";
 import { useResource } from "../api.js";
 import { pick, ratio, shortDate } from "../format.js";
 import ControlTape, { summarise } from "../components/ControlTape.jsx";
 import DataTable from "../components/DataTable.jsx";
 import { Empty, Failed, Loading } from "../components/States.jsx";
 
+const STORAGE_KEY = "scorecard-password";
+
+// Kept out of the built bundle entirely: the password is only ever typed in
+// at runtime and held in this tab's sessionStorage, then sent as a header the
+// API checks server-side. Unlike VITE_API_KEY, this is real access control.
+function PasswordGate({ onSubmit, wrongPassword }) {
+  const [draft, setDraft] = useState("");
+
+  return (
+    <>
+      <h1 className="h1">Control scorecard</h1>
+      <p className="lede">This view is restricted. Enter the password to continue.</p>
+      <form
+        className="gate__row"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(draft);
+        }}
+      >
+        <input
+          type="password"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Password"
+          autoFocus
+        />
+        <button className="state__action" type="submit">
+          Unlock
+        </button>
+      </form>
+      {wrongPassword ? (
+        <p className="lede" style={{ color: "var(--error)" }}>
+          Incorrect password.
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 export default function Scorecard() {
-  const { status, data, error, retry } = useResource("/controls/scorecard");
+  const [password, setPassword] = useState(() => sessionStorage.getItem(STORAGE_KEY) || "");
+  const { status, data, error, retry } = useResource(
+    "/controls/scorecard",
+    undefined,
+    [password],
+    password ? { "x-scorecard-password": password } : undefined
+  );
+
+  if (!password) return <PasswordGate onSubmit={setPassword} />;
+
+  if (status === "error" && error?.status === 401) {
+    sessionStorage.removeItem(STORAGE_KEY);
+    return <PasswordGate onSubmit={setPassword} wrongPassword />;
+  }
 
   if (status === "loading") return <Loading label="the latest control run" />;
   if (status === "error") return <Failed error={error} onRetry={retry} />;
+
+  sessionStorage.setItem(STORAGE_KEY, password);
 
   const results = data.results ?? [];
   const scorecard = data.scorecard ?? [];

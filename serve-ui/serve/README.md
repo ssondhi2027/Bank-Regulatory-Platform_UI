@@ -189,3 +189,12 @@ neutral so a breach is the only thing on the page that raises its voice.
   for anything else. The optional `x-api-key` header (see `API_KEY` in
   `terraform.tfvars`) filters scrapers hitting the API directly, but it is not
   real access control — it ships in the public Netlify build.
+
+## Restricting the Control scorecard
+
+Set `scorecard_password` in `terraform.tfvars` and apply to require a password
+for `GET /controls/scorecard` specifically — Bank financials stays public.
+Unlike `API_KEY`, this one is never baked into the Netlify build: the page
+shows a lock screen, the password is typed in at runtime and checked
+server-side, and it's held only in that tab's `sessionStorage`. Leave it
+blank to leave the page open, same as everything else.

@@ -49,6 +49,18 @@ variable "api_key" {
   sensitive   = true
 }
 
+variable "scorecard_password" {
+  description = <<-EOT
+    Password required to view the Control scorecard page specifically. Unlike
+    api_key, this is never shipped in the Netlify build — the front end asks
+    for it at runtime, so it's real access control. Leave blank to disable
+    the check (the page is open to anyone, same as the rest of the site).
+  EOT
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "name_prefix" {
   type    = string
   default = "brp"

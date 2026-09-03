@@ -54,4 +54,10 @@ export const config = {
   // bots and scrapers that hit the Function URL directly without loading the
   // site. Leave unset to disable the check entirely.
   apiKey: process.env.API_KEY || null,
+
+  // Gates GET /controls/scorecard specifically. Unlike apiKey, this is never
+  // shipped in the Netlify build — the front end asks for it at runtime and
+  // holds it only in the browser session, so it's real access control rather
+  // than a scraper filter.
+  scorecardPassword: process.env.SCORECARD_PASSWORD || null,
 };

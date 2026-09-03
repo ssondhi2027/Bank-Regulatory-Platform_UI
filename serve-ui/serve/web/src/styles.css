@@ -157,6 +157,30 @@ body {
   padding: var(--s4);
 }
 
+/* ---------- password gate ---------- */
+
+.gate__row {
+  display: flex;
+  gap: var(--s3);
+  max-width: 360px;
+}
+
+.gate__row input[type="password"] {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  color: var(--ink);
+  flex: 1;
+  font: inherit;
+  padding: var(--s2) var(--s3);
+}
+
+.gate__row input[type="password"]:focus {
+  border-color: var(--focus);
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
 /* ---------- control tape (the hero) ---------- */
 
 .tape {
@@ -393,6 +417,13 @@ body {
 .table td.num,
 .table th.num {
   text-align: right;
+}
+
+/* Flags a value carried forward from an older period than the rest of its
+   row — e.g. a quarterly-only field next to otherwise-monthly figures. */
+.cell-note {
+  color: var(--ink-faint);
+  font-size: 13px;
 }
 
 .sev {

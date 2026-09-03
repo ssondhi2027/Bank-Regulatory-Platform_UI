@@ -4,7 +4,7 @@ const baseHeaders = {
   "content-type": "application/json; charset=utf-8",
   "access-control-allow-origin": config.corsOrigin,
   "access-control-allow-methods": "GET,OPTIONS",
-  "access-control-allow-headers": "content-type, x-api-key",
+  "access-control-allow-headers": "content-type, x-api-key, x-scorecard-password",
 };
 
 export function json(body, { status = 200, maxAge = 0 } = {}) {

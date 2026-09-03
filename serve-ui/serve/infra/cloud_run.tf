@@ -60,6 +60,10 @@ resource "google_cloud_run_v2_service" "api" {
         name  = "API_KEY"
         value = var.api_key
       }
+      env {
+        name  = "SCORECARD_PASSWORD"
+        value = var.scorecard_password
+      }
 
       resources {
         limits = {
