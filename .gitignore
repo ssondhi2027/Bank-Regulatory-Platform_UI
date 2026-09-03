@@ -5,3 +5,10 @@ __pycache__/
 *.pyc
 *.key
 node_modules/
+
+# Terraform state and vars hold real secrets and account IDs.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
