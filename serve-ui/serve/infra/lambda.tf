@@ -71,6 +71,7 @@ resource "aws_lambda_function" "api" {
       BQ_MAX_BYTES_BILLED    = "500000000"
       CACHE_TTL_SECONDS      = "0"
       CORS_ALLOW_ORIGIN      = var.cors_allow_origin
+      API_KEY                = var.api_key
       NODE_OPTIONS           = "--enable-source-maps"
     }
   }

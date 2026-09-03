@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 const BASE = (import.meta.env.VITE_API_BASE || "http://localhost:8787").replace(/\/+$/, "");
+// Ships in the built bundle, so it's a filter against naive scrapers hitting
+// the Function URL directly, not real access control — anyone loading the
+// site can read it from the network tab.
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 export async function get(path, params = {}) {
   const url = new URL(BASE + path);
@@ -9,7 +13,12 @@ export async function get(path, params = {}) {
     url.searchParams.set(k, Array.isArray(v) ? v.join(",") : v);
   }
 
-  const res = await fetch(url, { headers: { accept: "application/json" } });
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      ...(API_KEY ? { "x-api-key": API_KEY } : {}),
+    },
+  });
   const body = await res.json().catch(() => ({}));
 
   if (!res.ok) throw new Error(body.error || `Request failed (${res.status}).`);

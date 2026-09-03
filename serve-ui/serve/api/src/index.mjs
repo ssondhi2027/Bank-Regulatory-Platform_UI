@@ -1,4 +1,5 @@
-import { json, fail, HttpError, readIdList, readDate } from "./http.mjs";
+import { json, fail, HttpError, readIdList, readDate, readHeader } from "./http.mjs";
+import { config } from "./config.mjs";
 import * as q from "./queries.mjs";
 
 /** Every route hits BigQuery on each request — no server-side result store. */
@@ -26,6 +27,10 @@ export const handler = async (event) => {
   if (method === "OPTIONS") return json({}, { status: 204 });
 
   try {
+    if (config.apiKey && readHeader(event.headers, "x-api-key") !== config.apiKey) {
+      throw new HttpError(401, "Missing or invalid API key.");
+    }
+
     const route = routes[`${method} ${path}`];
     if (!route) throw new HttpError(404, `No route for ${method} ${path}`);
 

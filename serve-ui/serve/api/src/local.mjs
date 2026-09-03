@@ -13,6 +13,7 @@ createServer(async (req, res) => {
     rawPath: url.pathname,
     queryStringParameters: Object.fromEntries(url.searchParams),
     requestContext: { http: { method: req.method } },
+    headers: req.headers,
   });
 
   res.writeHead(result.statusCode, result.headers);

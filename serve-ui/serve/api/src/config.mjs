@@ -57,4 +57,11 @@ export const config = {
 
   corsOrigin: process.env.CORS_ALLOW_ORIGIN || "*",
   maxRows: 5000,
+
+  // Shared secret required in the x-api-key header, if set. This ships inside
+  // the public Netlify build (VITE_API_KEY), so it is not real access control
+  // — anyone can read it from the browser's network tab. It only filters out
+  // bots and scrapers that hit the Function URL directly without loading the
+  // site. Leave unset to disable the check entirely.
+  apiKey: process.env.API_KEY || null,
 };

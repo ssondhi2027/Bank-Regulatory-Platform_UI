@@ -42,6 +42,18 @@ variable "cors_allow_origin" {
   default     = "*"
 }
 
+variable "api_key" {
+  description = <<-EOT
+    Shared secret required in the x-api-key header. It ships inside the public
+    Netlify build (as VITE_API_KEY), so it is not real access control — it only
+    filters out bots and scrapers that hit the Function URL directly without
+    loading the site. Leave blank to disable the check entirely.
+  EOT
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "name_prefix" {
   type    = string
   default = "brp"

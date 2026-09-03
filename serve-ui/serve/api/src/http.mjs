@@ -4,7 +4,7 @@ const baseHeaders = {
   "content-type": "application/json; charset=utf-8",
   "access-control-allow-origin": config.corsOrigin,
   "access-control-allow-methods": "GET,OPTIONS",
-  "access-control-allow-headers": "content-type",
+  "access-control-allow-headers": "content-type, x-api-key",
 };
 
 export function json(body, { status = 200, maxAge = 0 } = {}) {
@@ -35,6 +35,14 @@ export function fail(err) {
     },
     { status }
   );
+}
+
+// Function URL and local.mjs both hand over a plain headers object, but casing
+// isn't guaranteed, so look the name up case-insensitively.
+export function readHeader(headers, name) {
+  if (!headers) return undefined;
+  const key = Object.keys(headers).find((k) => k.toLowerCase() === name);
+  return key ? headers[key] : undefined;
 }
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
