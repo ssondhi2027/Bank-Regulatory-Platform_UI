@@ -1,6 +1,7 @@
 import { json, fail, HttpError, readIdList, readDate, readHeader } from "./http.mjs";
 import { config } from "./config.mjs";
 import * as q from "./queries.mjs";
+import { getFinancialsInsight, getScorecardInsight } from "./insights.mjs";
 
 /** Every route hits BigQuery on each request — no server-side result store. */
 const routes = {
@@ -18,6 +19,9 @@ const routes = {
     const [scorecard, results] = await Promise.all([q.controlScorecard(), q.controlResults()]);
     return { scorecard, results, runId: results[0]?.run_id ?? null };
   },
+
+  "GET /insights/scorecard": async () => ({ insight: await getScorecardInsight() }),
+  "GET /insights/financials": async () => ({ insight: await getFinancialsInsight() }),
 };
 
 export const handler = async (event) => {
@@ -32,7 +36,7 @@ export const handler = async (event) => {
     }
 
     if (
-      path === "/controls/scorecard" &&
+      (path === "/controls/scorecard" || path === "/insights/scorecard") &&
       config.scorecardPassword &&
       readHeader(event.headers, "x-scorecard-password") !== config.scorecardPassword
     ) {

@@ -4,6 +4,7 @@ import { billions, quarter, ratio, shortDate } from "../format.js";
 import DataTable from "../components/DataTable.jsx";
 import MetricChart from "../components/MetricChart.jsx";
 import { Empty, Failed, Loading } from "../components/States.jsx";
+import Insight from "../components/Insight.jsx";
 
 const METRICS = [
   { key: "net_interest_margin", label: "Net interest margin" },
@@ -48,6 +49,8 @@ export default function Business() {
         Quarterly ratios derived from de-cumulated P3 income statements against M4 balances.
         Amounts are as originally filed, in Canadian dollars.
       </p>
+
+      <Insight path="/insights/financials" />
 
       <div className="toolbar">
         <div className="field">

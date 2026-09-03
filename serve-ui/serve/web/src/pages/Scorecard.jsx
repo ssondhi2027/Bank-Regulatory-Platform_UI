@@ -4,6 +4,7 @@ import { pick, ratio, shortDate } from "../format.js";
 import ControlTape, { summarise } from "../components/ControlTape.jsx";
 import DataTable from "../components/DataTable.jsx";
 import { Empty, Failed, Loading } from "../components/States.jsx";
+import Insight from "../components/Insight.jsx";
 
 const STORAGE_KEY = "scorecard-password";
 
@@ -82,6 +83,8 @@ export default function Scorecard() {
         Outcomes for every implemented control in the most recent dbt run, grouped by the BCBS 239
         data quality dimension it belongs to.
       </p>
+
+      <Insight path="/insights/scorecard" extraHeaders={{ "x-scorecard-password": password }} />
 
       <ControlTape results={results} />
 

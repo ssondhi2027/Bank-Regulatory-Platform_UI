@@ -11,3 +11,7 @@ api_key = ""
 # a VITE_ variable, it must never end up in the public build. Leave blank to
 # leave the page open to anyone.
 scorecard_password = ""
+
+# Get a free key at https://ai.google.dev (Google AI Studio, not Vertex AI --
+# no GCP billing needed). Leave blank to disable /insights/* entirely.
+gemini_api_key = ""

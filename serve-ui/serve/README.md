@@ -27,6 +27,8 @@ Every request queries BigQuery live. Nothing is cached server side.
 | `api/src/queries.mjs` | One function per endpoint, parameterised SQL |
 | `api/src/auth.mjs` | Application Default Credentials |
 | `api/src/bigquery.mjs` | Client, byte ceiling, result normalisation |
+| `api/src/insights.mjs` | Builds the /insights/* summaries and caches them in memory |
+| `api/src/gemini.mjs` | The one REST call to Gemini that insights.mjs uses |
 | `api/src/server.mjs` | Plain HTTP server — runs the same handler locally and on Cloud Run |
 | `web/src/pages/` | The two views: control scorecard and bank financials |
 | `web/src/styles.css` | Design tokens and the responsive rules |
@@ -42,6 +44,13 @@ Every request queries BigQuery live. Nothing is cached server side.
 | `GET /balance-sheet` | `fct_balance_sheet` |
 | `GET /income-statement` | `fct_income_statement` |
 | `GET /controls/scorecard` | `rpt_control_scorecard` + `fct_control_results` |
+| `GET /insights/scorecard` | A 2-3 sentence Gemini summary of the above; gated by `x-scorecard-password` alongside it |
+| `GET /insights/financials` | A 2-3 sentence Gemini summary across all institutions' latest figures, independent of whatever the UI has filtered to |
+
+`/insights/*` return `503` rather than failing when `GEMINI_API_KEY` isn't set —
+they're a nice-to-have, not core content. The front end hides the panel
+entirely rather than showing an error when that happens. See [Insights
+(optional)](#insights-optional) below.
 
 The three fact routes accept `institution_id` (comma-separated, max 25),
 `from`, and `to` (ISO dates). All are optional; omitting them returns the full
@@ -198,3 +207,31 @@ Unlike `API_KEY`, this one is never baked into the Netlify build: the page
 shows a lock screen, the password is typed in at runtime and checked
 server-side, and it's held only in that tab's `sessionStorage`. Leave it
 blank to leave the page open, same as everything else.
+
+## Insights (optional)
+
+Both pages can show a short "AI summary" panel — a couple of plain-language
+sentences generated from the same numbers already on screen. It's opt-in and
+degrades silently: set `gemini_api_key` in `terraform.tfvars` and apply to
+turn it on, leave it blank and the panel just doesn't render.
+
+Get a free key at [ai.google.dev](https://ai.google.dev) (Google AI Studio —
+not Vertex AI, which needs GCP billing enabled instead). Note that even on
+the free tier, Google may require a one-time "prepay" step on the project
+before the API will respond at all; if `/insights/*` returns 503, check
+<https://ai.studio/projects> for your project's billing status before
+assuming the code is broken.
+
+`gemini_model` defaults to whatever was current when this was written — check
+ai.google.dev's model list if it's since been retired, `insights.mjs` will
+tell you the replacement name in its own error logs (Gemini's 404 response
+for a deprecated model names its successor directly).
+
+Generation happens server-side and is cached in memory per Cloud Run instance
+for `insights_cache_ttl_seconds` (default one hour) — the point is staying
+comfortably inside the free tier's rate limit, not freshness; the underlying
+marts don't change intraday anyway. The scorecard insight is built from the
+same query the scorecard page uses and sits behind the same password; the
+financials insight summarizes all institutions' latest figures regardless of
+what the interactive chart is currently filtered to, so it stays cacheable
+rather than regenerating per filter combination.

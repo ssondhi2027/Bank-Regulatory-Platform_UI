@@ -60,4 +60,18 @@ export const config = {
   // holds it only in the browser session, so it's real access control rather
   // than a scraper filter.
   scorecardPassword: process.env.SCORECARD_PASSWORD || null,
+
+  // Plain-language summaries via the Gemini API. Optional: /insights/* return
+  // 503 when unset rather than failing the rest of the app. The key is a
+  // Cloud Run env var only — insights.mjs calls Gemini server-side, so it
+  // never reaches the browser.
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || null,
+    model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+    // Generating an insight is a Gemini call, not a BigQuery one, so it isn't
+    // covered by cacheTtlSeconds above. Defaults to an hour: the underlying
+    // marts change at most daily, and the free tier's rate limit is the
+    // actual constraint this is protecting.
+    cacheTtlSeconds: Number(process.env.INSIGHTS_CACHE_TTL_SECONDS || 3600),
+  },
 };

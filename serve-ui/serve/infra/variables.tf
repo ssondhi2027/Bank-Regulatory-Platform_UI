@@ -61,6 +61,29 @@ variable "scorecard_password" {
   sensitive   = true
 }
 
+variable "gemini_api_key" {
+  description = <<-EOT
+    Google AI Studio API key (ai.google.dev), used server-side only to
+    generate the plain-language dashboard summaries. Leave blank to disable
+    /insights/* entirely -- they return 503 rather than failing the app.
+  EOT
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "gemini_model" {
+  description = "Gemini model for insight generation. Check ai.google.dev for the current free-tier model if this one's been retired."
+  type        = string
+  default     = "gemini-3.6-flash"
+}
+
+variable "insights_cache_ttl_seconds" {
+  description = "How long a generated insight is reused before calling Gemini again. Protects the free tier's rate limit; the marts don't change intraday anyway."
+  type        = number
+  default     = 3600
+}
+
 variable "name_prefix" {
   type    = string
   default = "brp"

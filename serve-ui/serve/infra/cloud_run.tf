@@ -64,6 +64,18 @@ resource "google_cloud_run_v2_service" "api" {
         name  = "SCORECARD_PASSWORD"
         value = var.scorecard_password
       }
+      env {
+        name  = "GEMINI_API_KEY"
+        value = var.gemini_api_key
+      }
+      env {
+        name  = "GEMINI_MODEL"
+        value = var.gemini_model
+      }
+      env {
+        name  = "INSIGHTS_CACHE_TTL_SECONDS"
+        value = tostring(var.insights_cache_ttl_seconds)
+      }
 
       resources {
         limits = {

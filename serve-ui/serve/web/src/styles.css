@@ -157,6 +157,29 @@ body {
   padding: var(--s4);
 }
 
+/* ---------- AI insight ---------- */
+
+.insight {
+  background: var(--surface);
+  border-left: 3px solid var(--focus);
+  margin-bottom: var(--s5);
+  padding: var(--s3) var(--s4);
+}
+
+.insight__label {
+  color: var(--ink-faint);
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--s1);
+  text-transform: uppercase;
+}
+
+.insight__text {
+  margin: 0;
+  max-width: 68ch;
+}
+
 /* ---------- password gate ---------- */
 
 .gate__row {
