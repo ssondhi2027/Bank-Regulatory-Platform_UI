@@ -46,6 +46,7 @@ Every request queries BigQuery live. Nothing is cached server side.
 | `GET /controls/scorecard` | `rpt_control_scorecard` + `fct_control_results` |
 | `GET /insights/scorecard` | A 2-3 sentence Gemini summary of the above; gated by `x-scorecard-password` alongside it |
 | `GET /insights/financials` | A 2-3 sentence Gemini summary across all institutions' latest figures, independent of whatever the UI has filtered to |
+| `GET /insights/outlook` | User-triggered summary + hedged outlook for the chart's current `institution_id`/`measure` selection |
 
 `/insights/*` return `503` rather than failing when `GEMINI_API_KEY` isn't set —
 they're a nice-to-have, not core content. The front end hides the panel
@@ -104,6 +105,11 @@ Locally the Google client falls back to Application Default Credentials, so
 the same keyfile the Evidence connection uses works here — or skip the keyfile
 entirely and run `gcloud auth application-default login` once. On Cloud Run,
 the attached service account is used instead; no keyfile exists there at all.
+
+All of `API_KEY`, `SCORECARD_PASSWORD`, and `GEMINI_API_KEY` are optional env
+vars on the API process, same names as in `terraform.tfvars` — set any of
+them locally to exercise that feature in dev, or leave them all unset to run
+with everything wide open and `/insights/*` disabled.
 
 ## Deploying
 
@@ -235,3 +241,16 @@ same query the scorecard page uses and sits behind the same password; the
 financials insight summarizes all institutions' latest figures regardless of
 what the interactive chart is currently filtered to, so it stays cacheable
 rather than regenerating per filter combination.
+
+A separate "Generate insight" button below the Bank financials chart calls
+`GET /insights/outlook`, scoped to whatever institutions and measure the
+chart is currently showing. This one is deliberately user-triggered rather
+than auto-loaded or cached across selections: the combination of up to six
+institutions and six measures is too large a space to cache meaningfully,
+and each click is now a real (if small) cost once past the free tier, not
+just a rate limit to respect. It returns two parts — a grounded summary of
+the selected series, and a separately-labeled "Outlook — not a forecast"
+section aimed at an external analyst/regulator audience, explicitly hedged
+as a general observation rather than a certified prediction or
+recommendation. Changing the institution or measure selection resets the
+panel rather than leaving a stale result attached to a different chart.

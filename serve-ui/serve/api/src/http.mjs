@@ -66,3 +66,18 @@ export function readDate(qs, name) {
   if (!ISO_DATE.test(raw)) throw new HttpError(400, `${name} must be an ISO date (YYYY-MM-DD).`);
   return raw;
 }
+
+const MEASURES = new Set([
+  "net_interest_margin",
+  "return_on_assets",
+  "return_on_equity",
+  "efficiency_ratio",
+  "deposit_to_loan_ratio",
+  "allowance_coverage_ratio",
+]);
+
+export function readMeasure(qs) {
+  const v = qs?.measure;
+  if (!v || !MEASURES.has(v)) throw new HttpError(400, `measure must be one of: ${[...MEASURES].join(", ")}`);
+  return v;
+}

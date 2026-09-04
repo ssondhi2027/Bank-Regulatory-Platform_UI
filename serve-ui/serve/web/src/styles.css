@@ -180,6 +180,33 @@ body {
   max-width: 68ch;
 }
 
+.outlook {
+  margin-top: var(--s4);
+}
+
+.outlook__error {
+  color: var(--error);
+  font-size: 14px;
+  margin: var(--s2) 0 0;
+}
+
+.outlook__result {
+  background: var(--surface);
+  border-left: 3px solid var(--rule-strong);
+  margin-top: var(--s3);
+  padding: var(--s3) var(--s4);
+}
+
+.outlook__summary {
+  margin: 0;
+  max-width: 68ch;
+}
+
+.outlook__note {
+  margin: var(--s3) 0 0;
+  max-width: 68ch;
+}
+
 /* ---------- password gate ---------- */
 
 .gate__row {

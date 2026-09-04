@@ -6,7 +6,7 @@ import { HttpError } from "./http.mjs";
  * single REST call with no streaming or chat state, so a dependency for it
  * would outweigh what it buys.
  */
-export async function generateText(prompt) {
+export async function generateText(prompt, { json: wantsJson = false } = {}) {
   const { apiKey, model } = config.gemini;
   if (!apiKey) throw new HttpError(503, "AI insights are not configured.");
 
@@ -19,11 +19,15 @@ export async function generateText(prompt) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      // This model spends a large, variable chunk of maxOutputTokens on
-      // invisible "thinking" before the visible answer — thinkingBudget: 0
-      // to disable that outright gets rejected as invalid for this model, so
-      // the only lever left is a ceiling generous enough to survive it.
-      generationConfig: { temperature: 0.2, maxOutputTokens: 4096 },
+      generationConfig: {
+        temperature: 0.2,
+        // This model spends a large, variable chunk of maxOutputTokens on
+        // invisible "thinking" before the visible answer — thinkingBudget: 0
+        // to disable that outright gets rejected as invalid for this model,
+        // so the only lever left is a ceiling generous enough to survive it.
+        maxOutputTokens: 4096,
+        ...(wantsJson ? { responseMimeType: "application/json" } : {}),
+      },
     }),
   });
 

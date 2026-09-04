@@ -1,7 +1,7 @@
-import { json, fail, HttpError, readIdList, readDate, readHeader } from "./http.mjs";
+import { json, fail, HttpError, readIdList, readDate, readHeader, readMeasure } from "./http.mjs";
 import { config } from "./config.mjs";
 import * as q from "./queries.mjs";
-import { getFinancialsInsight, getScorecardInsight } from "./insights.mjs";
+import { getChartOutlook, getFinancialsInsight, getScorecardInsight } from "./insights.mjs";
 
 /** Every route hits BigQuery on each request — no server-side result store. */
 const routes = {
@@ -22,6 +22,7 @@ const routes = {
 
   "GET /insights/scorecard": async () => ({ insight: await getScorecardInsight() }),
   "GET /insights/financials": async () => ({ insight: await getFinancialsInsight() }),
+  "GET /insights/outlook": async (scope, qs) => getChartOutlook(scope, readMeasure(qs)),
 };
 
 export const handler = async (event) => {
@@ -53,7 +54,7 @@ export const handler = async (event) => {
       toDate: readDate(qs, "to"),
     };
 
-    return json(await route(scope));
+    return json(await route(scope, qs));
   } catch (err) {
     return fail(err);
   }

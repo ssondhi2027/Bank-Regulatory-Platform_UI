@@ -5,6 +5,7 @@ import DataTable from "../components/DataTable.jsx";
 import MetricChart from "../components/MetricChart.jsx";
 import { Empty, Failed, Loading } from "../components/States.jsx";
 import Insight from "../components/Insight.jsx";
+import ChartOutlook from "../components/ChartOutlook.jsx";
 
 const METRICS = [
   { key: "net_interest_margin", label: "Net interest margin" },
@@ -106,6 +107,8 @@ export default function Business() {
           />
         )}
       </section>
+
+      <ChartOutlook key={`${active.join(",")}:${metric}`} institutionIds={active} measure={metric} />
 
       <section className="section">
         <h2 className="h2">Latest balance sheet</h2>
