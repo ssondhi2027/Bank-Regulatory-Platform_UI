@@ -1,6 +1,6 @@
 const PAGES = [
-  { id: "scorecard", label: "Control scorecard" },
   { id: "business", label: "Bank financials" },
+  { id: "scorecard", label: "Control scorecard" },
 ];
 
 export default function Layout({ page, onNavigate, children }) {
