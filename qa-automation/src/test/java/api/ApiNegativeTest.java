@@ -5,9 +5,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
 
-public class InstitutionsApiTest {
+public class ApiNegativeTest {
 
     @BeforeClass
     public void setup() {
@@ -20,19 +19,22 @@ public class InstitutionsApiTest {
     }
 
     @Test(
-        groups = {"smoke", "api"},
-        description = "Verify institutions API"
+        groups = {"regression", "api"},
+        description = "Verify invalid endpoint handling"
     )
-    public void verifyInstitutionsEndpoint() {
+    public void verifyInvalidEndpoint() {
 
         given()
 
         .when()
-            .get("/institutions")
+            .get("/invalid-endpoint")
 
         .then()
-            .statusCode(200)
-            .contentType("application/json")
-            .body("$", notNullValue());
+            .statusCode(
+                org.hamcrest.Matchers.anyOf(
+                    org.hamcrest.Matchers.is(404),
+                    org.hamcrest.Matchers.is(400)
+                )
+            );
     }
 }
