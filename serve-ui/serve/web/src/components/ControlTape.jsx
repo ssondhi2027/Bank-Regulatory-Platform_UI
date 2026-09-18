@@ -9,14 +9,15 @@ export default function ControlTape({ results }) {
   return (
     <div className="tape">
       <div className="tape__grid">
-        {results.map((r) => {
+        {results.map((r, i) => {
           const tone = r.is_passing ? "pass" : (r.severity || "").toLowerCase() === "warn" ? "warn" : "error";
           const outcome = r.is_passing ? "passing" : `breached, ${r.severity}`;
 
           return (
             <div
-              key={r.control_id}
+              key={`${r.control_id}-${i}`}
               className={`tile tile--${tone}`}
+              style={{ "--i": i }}
               title={`${r.control_id} — ${r.category}, ${outcome}`}
             >
               <span className="tile__id">{r.control_id}</span>

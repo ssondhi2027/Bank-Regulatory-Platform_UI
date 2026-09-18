@@ -22,7 +22,7 @@ export default function DataTable({ columns, rows, caption, rowKey }) {
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={rowKey ? rowKey(row) : i}>
+            <tr key={rowKey ? rowKey(row, i) : i}>
               {columns.map((c) => (
                 <td
                   key={c.key}

@@ -12,14 +12,15 @@ import { quarter } from "../format.js";
 
 // Six lines is the ceiling (the Big Six), so a fixed hand-picked ramp beats a
 // generated scale — these stay distinguishable in greyscale and for the common
-// forms of colour blindness.
+// forms of colour blindness, and hold enough contrast on both a white and a
+// dark-navy chart surface so the palette doesn't need to switch with the theme.
 export const SERIES_COLORS = [
-  "#2a5c8a",
-  "#1f6b4a",
-  "#9a6b12",
-  "#7a3e8c",
-  "#a32c2c",
-  "#2f7d8a",
+  "#3f7fe0",
+  "#21a366",
+  "#d98c2b",
+  "#9c5fd1",
+  "#e2594f",
+  "#2bb3c0",
 ];
 
 function Tip({ active, payload, label, format }) {
@@ -83,9 +84,11 @@ export default function MetricChart({ title, note, data, series, format }) {
               stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
               strokeWidth={1.75}
               dot={false}
-              activeDot={{ r: 3.5 }}
+              activeDot={{ r: 4 }}
               connectNulls
-              isAnimationActive={false}
+              isAnimationActive
+              animationDuration={700}
+              animationEasing="ease-out"
             />
           ))}
         </LineChart>

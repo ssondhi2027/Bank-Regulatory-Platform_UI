@@ -17,6 +17,22 @@ export function ratio(value) {
   return pct.format(Number(value));
 }
 
+/** Same as ratio(), with an explicit +/− sign for a period-over-period change. */
+export function signedRatio(value) {
+  if (value === null || value === undefined) return "—";
+  const n = Number(value);
+  const sign = n > 0 ? "+" : n < 0 ? "−" : "";
+  return `${sign}${pct.format(Math.abs(n))}`;
+}
+
+/** For metrics that aren't shown as a percentage (e.g. deposit_to_loan_ratio). */
+export function signedNumber(value, digits = 2) {
+  if (value === null || value === undefined) return "—";
+  const n = Number(value);
+  const sign = n > 0 ? "+" : n < 0 ? "−" : "";
+  return `${sign}${Math.abs(n).toFixed(digits)}`;
+}
+
 export function quarter(isoDate) {
   if (!isoDate) return "—";
   const [y, m] = isoDate.split("-").map(Number);

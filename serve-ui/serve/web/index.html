@@ -8,6 +8,22 @@
       name="description"
       content="Control outcomes and financial trends from OSFI M4/P3/E3 regulatory filings."
     />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Set the theme before first paint so there's no light-to-dark flash.
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var theme =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

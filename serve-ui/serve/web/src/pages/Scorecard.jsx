@@ -1,70 +1,15 @@
-import { useState } from "react";
 import { useResource } from "../api.js";
-import { pick, ratio, shortDate } from "../format.js";
+import { pick, ratio, shortDate, signedRatio } from "../format.js";
 import ControlTape, { summarise } from "../components/ControlTape.jsx";
 import DataTable from "../components/DataTable.jsx";
 import { Empty, Failed, Loading } from "../components/States.jsx";
 import Insight from "../components/Insight.jsx";
 
-const STORAGE_KEY = "scorecard-password";
-
-// Kept out of the built bundle entirely: the password is only ever typed in
-// at runtime and held in this tab's sessionStorage, then sent as a header the
-// API checks server-side. Unlike VITE_API_KEY, this is real access control.
-function PasswordGate({ onSubmit, wrongPassword }) {
-  const [draft, setDraft] = useState("");
-
-  return (
-    <>
-      <h1 className="h1">Control scorecard</h1>
-      <p className="lede">This view is restricted. Enter the password to continue.</p>
-      <form
-        className="gate__row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit(draft);
-        }}
-      >
-        <input
-          type="password"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Password"
-          autoFocus
-        />
-        <button className="state__action" type="submit">
-          Unlock
-        </button>
-      </form>
-      {wrongPassword ? (
-        <p className="lede" style={{ color: "var(--error)" }}>
-          Incorrect password.
-        </p>
-      ) : null}
-    </>
-  );
-}
-
 export default function Scorecard() {
-  const [password, setPassword] = useState(() => sessionStorage.getItem(STORAGE_KEY) || "");
-  const { status, data, error, retry } = useResource(
-    "/controls/scorecard",
-    undefined,
-    [password],
-    password ? { "x-scorecard-password": password } : undefined
-  );
-
-  if (!password) return <PasswordGate onSubmit={setPassword} />;
-
-  if (status === "error" && error?.status === 401) {
-    sessionStorage.removeItem(STORAGE_KEY);
-    return <PasswordGate onSubmit={setPassword} wrongPassword />;
-  }
+  const { status, data, error, retry } = useResource("/controls/scorecard");
 
   if (status === "loading") return <Loading label="the latest control run" />;
   if (status === "error") return <Failed error={error} onRetry={retry} />;
-
-  sessionStorage.setItem(STORAGE_KEY, password);
 
   const results = data.results ?? [];
   const scorecard = data.scorecard ?? [];
@@ -84,7 +29,7 @@ export default function Scorecard() {
         data quality dimension it belongs to.
       </p>
 
-      <Insight path="/insights/scorecard" extraHeaders={{ "x-scorecard-password": password }} />
+      <Insight path="/insights/scorecard" />
 
       <ControlTape results={results} />
 
@@ -145,6 +90,19 @@ export default function Scorecard() {
                 render: (r) =>
                   ratio(pick(r, ["trailing_30d_pass_rate", "pass_rate_30d", "rolling_30d_pass_rate"])),
               },
+              {
+                key: "trend",
+                label: "Vs. 30-day trend",
+                align: "num",
+                render: (r) => {
+                  const latest = pick(r, ["pass_rate", "passing_rate", "pass_rate_pct"]);
+                  const trailing = pick(r, ["trailing_30d_pass_rate", "pass_rate_30d", "rolling_30d_pass_rate"]);
+                  if (latest === null || trailing === null) return "—";
+                  const delta = Number(latest) - Number(trailing);
+                  const tone = delta > 0 ? "pass" : delta < 0 ? "error" : "";
+                  return <span className={tone ? `sev sev--${tone}` : undefined}>{signedRatio(delta)}</span>;
+                },
+              },
             ]}
           />
         </section>
@@ -157,7 +115,7 @@ export default function Scorecard() {
         ) : (
           <DataTable
             caption="Controls that failed in the latest run"
-            rowKey={(r) => r.control_id}
+            rowKey={(r, i) => `${r.control_id}-${i}`}
             rows={results.filter((r) => !r.is_passing)}
             columns={[
               { key: "control_id", label: "Control" },

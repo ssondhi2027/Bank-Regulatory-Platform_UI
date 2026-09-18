@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useResource } from "../api.js";
-import { billions, quarter, ratio, shortDate } from "../format.js";
+import { billions, quarter, ratio, shortDate, signedNumber, signedRatio } from "../format.js";
 import DataTable from "../components/DataTable.jsx";
 import MetricChart from "../components/MetricChart.jsx";
 import { Empty, Failed, Loading } from "../components/States.jsx";
@@ -30,6 +30,14 @@ export default function Business() {
   const balances = useResource("/balance-sheet", params);
   const income = useResource("/income-statement", params);
 
+  const kpis = useMemo(() => {
+    if (metrics.status !== "ready" || balances.status !== "ready" || income.status !== "ready") {
+      return null;
+    }
+    return computeKpis(metrics.data.metrics, balances.data.rows, income.data.rows, active, metric);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metrics.status, metrics.data, balances.status, balances.data, income.status, income.data, active.join(","), metric]);
+
   if (institutions.status === "loading") return <Loading label="the institution registry" />;
   if (institutions.status === "error")
     return <Failed error={institutions.error} onRetry={institutions.retry} />;
@@ -37,6 +45,7 @@ export default function Business() {
   const names = Object.fromEntries(all.map((i) => [i.institution_id, i.short_name || i.legal_name]));
   const series = active.map((id) => ({ key: id, name: names[id] ?? id }));
   const isRatio = metric !== "deposit_to_loan_ratio";
+  const metricLabel = METRICS.find((m) => m.key === metric).label;
 
   function toggle(id) {
     const next = active.includes(id) ? active.filter((x) => x !== id) : [...active, id];
@@ -52,6 +61,35 @@ export default function Business() {
       </p>
 
       <Insight path="/insights/financials" />
+
+      {kpis ? (
+        <div className="figures">
+          <p className="figure">
+            <span className="figure__value">{billions(kpis.totalAssets)}</span>
+            <span className="figure__label">Total assets, selected institutions</span>
+          </p>
+          <p className="figure">
+            <span className="figure__value">{billions(kpis.totalNetIncome)}</span>
+            <span className="figure__label">Total net income, latest filed period</span>
+          </p>
+          <p className="figure">
+            <span className="figure__value">
+              {kpis.avgMetric === null ? "—" : isRatio ? ratio(kpis.avgMetric) : kpis.avgMetric.toFixed(2)}
+            </span>
+            <span className="figure__label">{metricLabel}, average</span>
+          </p>
+          <p className="figure">
+            <span className="figure__value">
+              {kpis.metricDelta === null
+                ? "—"
+                : isRatio
+                ? signedRatio(kpis.metricDelta)
+                : signedNumber(kpis.metricDelta)}
+            </span>
+            <span className="figure__label">{metricLabel}, vs prior quarter</span>
+          </p>
+        </div>
+      ) : null}
 
       <div className="toolbar">
         <div className="field">
@@ -99,7 +137,7 @@ export default function Business() {
           <Failed error={metrics.error} onRetry={metrics.retry} />
         ) : (
           <MetricChart
-            title={METRICS.find((m) => m.key === metric).label}
+            title={metricLabel}
             note="One point per fiscal quarter end."
             data={pivot(metrics.data.metrics, metric)}
             series={series}
@@ -149,6 +187,53 @@ function pivot(rows, metric) {
   return [...byPeriod.values()].sort((a, b) =>
     a.reporting_period_end < b.reporting_period_end ? -1 : 1
   );
+}
+
+/** Headline numbers above the chart: total assets and net income across the
+ *  selected institutions' most recent filings, plus how the selected metric's
+ *  cross-institution average moved from the prior quarter to the latest one. */
+function computeKpis(metricRows, balanceRows, incomeRows, activeIds, metricKey) {
+  const byPeriod = new Map();
+  for (const r of metricRows) {
+    if (!activeIds.includes(r.institution_id)) continue;
+    const v = r[metricKey];
+    if (v === null || v === undefined) continue;
+    if (!byPeriod.has(r.reporting_period_end)) byPeriod.set(r.reporting_period_end, []);
+    byPeriod.get(r.reporting_period_end).push(Number(v));
+  }
+
+  const periods = [...byPeriod.keys()].sort();
+  const average = (period) => {
+    const vals = byPeriod.get(period);
+    return vals?.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  };
+
+  const latestPeriod = periods.at(-1) ?? null;
+  const priorPeriod = periods.length > 1 ? periods.at(-2) : null;
+  const avgMetric = latestPeriod ? average(latestPeriod) : null;
+  const avgMetricPrior = priorPeriod ? average(priorPeriod) : null;
+  const metricDelta = avgMetric !== null && avgMetricPrior !== null ? avgMetric - avgMetricPrior : null;
+
+  const latestPerInstitution = (rows) => {
+    const byInstitution = new Map();
+    for (const r of rows) {
+      if (!activeIds.includes(r.institution_id)) continue;
+      const held = byInstitution.get(r.institution_id);
+      if (!held || r.reporting_period_end > held.reporting_period_end) byInstitution.set(r.institution_id, r);
+    }
+    return [...byInstitution.values()];
+  };
+
+  const totalAssets = latestPerInstitution(balanceRows).reduce(
+    (sum, r) => sum + Number(r.total_assets_cad_000 || 0),
+    0
+  );
+  const totalNetIncome = latestPerInstitution(incomeRows).reduce(
+    (sum, r) => sum + Number(r.net_income_cad_000 || 0),
+    0
+  );
+
+  return { totalAssets, totalNetIncome, avgMetric, metricDelta };
 }
 
 /** The row with the highest reporting_period_end, ignoring rows where `field`

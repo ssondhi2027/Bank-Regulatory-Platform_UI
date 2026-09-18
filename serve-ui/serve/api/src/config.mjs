@@ -55,12 +55,6 @@ export const config = {
   // site. Leave unset to disable the check entirely.
   apiKey: process.env.API_KEY || null,
 
-  // Gates GET /controls/scorecard specifically. Unlike apiKey, this is never
-  // shipped in the Netlify build — the front end asks for it at runtime and
-  // holds it only in the browser session, so it's real access control rather
-  // than a scraper filter.
-  scorecardPassword: process.env.SCORECARD_PASSWORD || null,
-
   // Plain-language summaries via the Gemini API. Optional: /insights/* return
   // 503 when unset rather than failing the rest of the app. The key is a
   // Cloud Run env var only — insights.mjs calls Gemini server-side, so it
